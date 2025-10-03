@@ -4,6 +4,7 @@ import serial
 from schemas import Message
 from fastapi.middleware.cors import CORSMiddleware
 
+DEBUG = True
 app = FastAPI()
 
 SERIAL_PORT = 'COM3'
@@ -36,9 +37,11 @@ def send_to_arduino(data_bytes: bytes) -> bool:
 @app.post("/")
 def DataToArduino(message: Message):
     # Преобразуем текст в байты
-    print(message.text)
+    if DEBUG:
+        print(message.text)
     data_bytes = message.text.encode('utf-8')
-    
+    if DEBUG:
+        print(list(hex(int_byte) for int_byte in data_bytes))
     # Отправляем в Arduino
     if send_to_arduino(data_bytes):
         return {
@@ -47,7 +50,7 @@ def DataToArduino(message: Message):
             "original_text": message.text,
             "sent_bytes": list(data_bytes)
         }
-    else:
+    else:   
         raise HTTPException(
             status_code=500,
             detail="Ошибка отправки данных в Arduino"
