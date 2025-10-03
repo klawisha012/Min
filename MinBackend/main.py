@@ -2,13 +2,21 @@ from fastapi import FastAPI, HTTPException
 import uvicorn
 import serial
 from schemas import Message
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 
-# Настройки последовательного порта (подберите под вашу Arduino)
 SERIAL_PORT = 'COM3'
 BAUD_RATE = 9600
 TIMEOUT = 1
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 def send_to_arduino(data_bytes: bytes) -> bool:
     """Функция для отправки данных в последовательный порт"""
@@ -46,4 +54,4 @@ def DataToArduino(message: Message):
         )
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("main:app", port=8000, reload=True)
