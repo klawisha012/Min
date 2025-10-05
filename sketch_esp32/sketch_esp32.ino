@@ -8,6 +8,10 @@ float redCorrection = 0.85;
 float greenCorrection = 1.1;  
 float blueCorrection = 0.95;
 
+int redPin = 13;    
+int greenPin = 12;  
+int bluePin = 14;   
+
 String colorSequence = "";
 String PrevText = "";
 unsigned long lastReadTime = 0;
@@ -26,13 +30,13 @@ String decodeMorseSequence(String seq) {
    String decodedText = "";
    String tempLetter = "";
 
-   // Разбиваем по "2222" (пробел между словами)
+   
    int lastPos = 0;
    while (true) {
       int nextPos = seq.indexOf("2222", lastPos);
      String wordPart = (nextPos == -1) ? seq.substring(lastPos) : seq.substring(lastPos, nextPos);
 
-      // Разбиваем это слово на буквы по разделителю '3'
+      
       tempLetter = "";
       for (int i = 0; i < wordPart.length(); i++) {
         char c = wordPart[i];
@@ -77,10 +81,29 @@ String decodeMorseSequence(String seq) {
   return decodedText;
 }
 
+void setRGBColor(int color) {
+  digitalWrite(redPin, LOW);
+  digitalWrite(greenPin, LOW);
+  digitalWrite(bluePin, LOW);
+
+  switch(color) {
+    case 1: digitalWrite(redPin, HIGH); break;   
+    case 2: digitalWrite(bluePin, HIGH); break; 
+    case 3: digitalWrite(greenPin, HIGH); break;
+    default: break; 
+  }
+}
+
 void setup() {
   Serial.begin(9600);
   Wire.begin();
   
+  pinMode(redPin, OUTPUT);
+  pinMode(greenPin, OUTPUT);
+  pinMode(bluePin, OUTPUT);
+  
+  setRGBColor(0);
+
   if (tcs.begin()) {
     Serial.println("READY");
   } else {
@@ -97,29 +120,35 @@ void loop() {
     uint16_t red, green, blue, clear;
     tcs.getRawData(&red, &green, &blue, &clear);
     
-    // Применяем калибровку
+    
     uint16_t correctedRed = red * redCorrection;
     uint16_t correctedGreen = green * greenCorrection; 
     uint16_t correctedBlue = blue * blueCorrection;
     
-    // Определяем цвет после коррекции
+   
     char currentColor = '0';
+    int detectedColor = 0;
     
     if (correctedRed > correctedGreen && correctedRed > correctedBlue) {
       currentColor = '1';
+      detectedColor = 1; 
     }
     else if (correctedGreen > correctedRed && correctedGreen > correctedBlue) {
       currentColor = '3';
+      detectedColor = 3; 
     }
     else if (correctedBlue > correctedRed && correctedBlue > correctedGreen) {
       currentColor = '2';
-    }
+      detectedColor = 2; 
     else {
       currentColor = '0';
+      detectedColor = 0; 
     }
+
+    setRGBColor(detectedColor);
     
     if (!isRecording) {
-      // Режим ожидания старта
+      
       if (currentColor == '3') {
         greenCount++;
       } else {
@@ -132,7 +161,7 @@ void loop() {
         greenCount = 0;
       }
     } else {
-      // Режим записи
+      
       if (currentColor == '3') {
         greenCount++;
       } else {
@@ -141,12 +170,12 @@ void loop() {
       
       colorSequence += currentColor;
       
-      // Проверяем окончание записи
+      
       if (greenCount >= 3) {
-        // Декодируем сообщение
+        
         String decodedMessage = decodeMorseSequence(colorSequence);
         
-        // Отправляем ТОЛЬКО декодированное сообщение
+        
         Serial.print("MESSAGE:");
         Serial.println(decodedMessage);
         

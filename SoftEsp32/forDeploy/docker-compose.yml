@@ -35,26 +35,9 @@ services:
       context: ./front/LookData/
       dockerfile: Dockerfile.frontend
     container_name: vue-frontend
-    expose:
-      - "80"
-    depends_on:
-      - backend
-    networks:
-      - app-network
-    restart: unless-stopped
-
-  nginx:
-    image: nginx:stable-alpine
-    container_name: nginx-server
-    volumes:
-      - "./front/LookData/nginx.conf:/etc/nginx/conf.d/default.conf"
-      - "./front/LookData/dist:/usr/share/nginx/html"
-    expose:
-      - "80"
     ports:
-      - "80:80"
+      - 80:80
     depends_on:
-      - frontend
       - backend
     networks:
       - app-network

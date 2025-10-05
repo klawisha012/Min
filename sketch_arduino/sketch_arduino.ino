@@ -1,35 +1,41 @@
 #include <Wire.h>
 
-// Пины для подключения RGB-светодиода
+
 int redPin = 6;    
 int greenPin = 5;  
 int bluePin = 3;   
 
-// Константы
+
 const unsigned long DOT_DURATION = 500;         
-const unsigned long COLOR_STABILIZE_DELAY = 100; 
-//const unsigned long BETWEEN_SYMBOLS_DELAY = 100; 
 
-bool isPlayingMorse = false;
 
-// ---------- Словарь Морзе ----------
+
+const int MAX_QUEUE_SIZE = 10;
+String messageQueue[MAX_QUEUE_SIZE];
+int queueSize = 0;
+int currentIndex = 0;
+bool isPlaying = false;
+String currentMorseCode = "";
+String currentOriginalMessage = "";
+
+
 struct MorseEntry {
   char letter;
   const char* code;
 };
 
-// Таблица соответствия A-Z и пробел
+
 MorseEntry morseAlphabet[] = {
   {'A',"12"}, {'B',"2111"}, {'C',"2121"}, {'D',"211"}, {'E',"1"},
   {'F',"1121"}, {'G',"221"}, {'H',"1111"}, {'I',"11"}, {'J',"1222"},
   {'K',"212"}, {'L',"1211"}, {'M',"22"}, {'N',"21"}, {'O',"222"},
   {'P',"1221"}, {'Q',"2212"}, {'R',"121"}, {'S',"111"}, {'T',"2"},
   {'U',"112"}, {'V',"1112"}, {'W',"122"}, {'X',"2112"}, {'Y',"2122"}, {'Z',"2211"},
-  {' ', "2222"} // пробел между словами
+  {' ', "2222"} 
 };
 const int morseSize = sizeof(morseAlphabet)/sizeof(morseAlphabet[0]);
 
-// Поиск кода по букве
+
 String getMorseCode(char c) {
   for (int i=0; i<morseSize; i++) {
     if (morseAlphabet[i].letter == c) {
@@ -39,7 +45,7 @@ String getMorseCode(char c) {
   return "";
 }
 
-// Управление LED
+
 void setLEDColor(int color) {
   digitalWrite(redPin, LOW);
   digitalWrite(greenPin, LOW);
@@ -52,15 +58,15 @@ void setLEDColor(int color) {
   }
 }
 
-// Преобразуем текст в код Морзе
+
 String textToMorseCode(String text) {
   String result = "";
   text.toUpperCase();
 
   Serial.println("=== Соответствие букв и кодов Морзе ===");
 
-  // Начало передачи (синхро-сигнал)
-  result += "333"; // зелёный–зелёный–зелёный
+  
+  result += "333"; 
 
   for(int i = 0; i < text.length(); i++){
     char c = text[i];
@@ -71,56 +77,117 @@ String textToMorseCode(String text) {
       Serial.println(code);
       result += code;
 
-      // добавляем разделитель между символами, кроме пробела
+      
       if(c != ' ' && i < text.length() - 1 && text[i+1] != ' ') {
-        result += "3"; // разделитель символов
+        result += "3"; 
       }
     }
   }
-  // конец передачи (синхро-сигнал)
-  result += "333"; // зелёный–зелёный–зелёный
+
+  
   Serial.println("================================");
   return result;
 }
 
-// Воспроизведение Morse
-void playMorseSequence(String morseSequence, String originalText) {
-  Serial.print("Полный морзе-код: ");
-  Serial.println(morseSequence);
-  isPlayingMorse = true;
 
-  Serial.println("Начало передачи...");
-  
-  for (int i = 0; i < morseSequence.length(); i++) {
-    char symbol = morseSequence[i];
-    int color = (symbol == ' ') ? 0 : (symbol - '0');
+void addToQueue(String message) {
+  if (queueSize < MAX_QUEUE_SIZE) {
+    messageQueue[queueSize] = message;
+    queueSize++;
+    Serial.print("Сообщение добавлено в очередь. В очереди: ");
+    Serial.println(queueSize);
     
-    Serial.print("Передаем: ");
-    switch(color) {
-      case 1: Serial.println("Красный (1)"); break;
-      case 2: Serial.println("Синий (2)"); break;
-      case 3: Serial.println("Зеленый (3)"); break;
-      default: Serial.println("Выключено"); break;
+    
+    if (!isPlaying) {
+      startNextMessage();
     }
+  } else {
+    Serial.println("Очередь переполнена! Сообщение не добавлено.");
+  }
+}
+
+
+void startNextMessage() {
+  if (currentIndex < queueSize) {
+    String message = messageQueue[currentIndex];
+    currentOriginalMessage = message;
+    currentMorseCode = textToMorseCode(message);
+    isPlaying = true;
+    
+    Serial.print("Начинаем воспроизведение: ");
+    Serial.println(message);
+    Serial.print("Осталось в очереди: ");
+    Serial.println(queueSize - currentIndex - 1);
+  } else {
+    
+    if (currentOriginalMessage != "") {
+      Serial.println("Очередь пуста. Повтор последнего сообщения...");
+      isPlaying = true;
+    } else {
+      isPlaying = false;
+      Serial.println("Нет сообщений для воспроизведения.");
+    }
+  }
+}
+
+
+void playMorseSequence() {
+  if (currentMorseCode == "") return;
+  
+  for (int i = 0; i < currentMorseCode.length(); i++) {
+    char symbol = currentMorseCode[i];
+    int color = (symbol == ' ') ? 0 : (symbol - '0');
     
     if(color > 0) {
       setLEDColor(color);
       delay(DOT_DURATION);
       setLEDColor(0); // выключить
     }
-    //delay(BETWEEN_SYMBOLS_DELAY); // пауза между символами
+    
+    
+    if (Serial.available() > 0) {
+      String inputWord = Serial.readString();
+      inputWord.trim();
+      
+      while(Serial.available() > 0) {
+        Serial.read();
+      }
+      
+      if(inputWord.length() > 0){
+        inputWord.toUpperCase();
+        String cleanWord = "";
+        for(int i = 0; i < inputWord.length(); i++) {
+          char c = inputWord[i];
+          if((c >= 'A' && c <= 'Z') || c == ' ') {
+            cleanWord += c;
+          }
+        }
+        
+        if(cleanWord.length() > 0){
+          Serial.print("Новое сообщение получено во время воспроизведения: ");
+          Serial.println(cleanWord);
+          addToQueue(cleanWord);
+        }
+      }
+    }
   }
-
-  Serial.println("=== Передача завершена ===");
-  Serial.print("Исходное сообщение: ");
-  Serial.println(originalText);
-  Serial.print("Переданный код: ");
-  Serial.println(morseSequence);
-  Serial.println("================================");
-  Serial.println();
-  Serial.println("Введите следующее слово:");
   
-  isPlayingMorse = false;
+ 
+  currentIndex++;
+  
+  if (currentIndex < queueSize) {
+    
+    startNextMessage();
+  } else if (queueSize > 0) {
+    
+    currentIndex = queueSize - 1;
+    Serial.println("Повтор последнего сообщения...");
+  } else {
+    
+    isPlaying = false;
+    currentMorseCode = "";
+    currentOriginalMessage = "";
+  }
 }
 
 void setup() {
@@ -134,10 +201,12 @@ void setup() {
   Serial.println();
   Serial.println("Передатчик Morse готов!");
   Serial.println("Введите слово для кодирования в Морзе:");
+  Serial.println("Сообщения добавляются в очередь и воспроизводятся по порядку");
 }
 
 void loop() {
-  if (!isPlayingMorse && Serial.available() > 0) {
+  
+  if (Serial.available() > 0) {
     String inputWord = Serial.readString();
     inputWord.trim();
     
@@ -157,14 +226,19 @@ void loop() {
       
       if(cleanWord.length() > 0){
         Serial.print("Получено слово: ");
-      
         Serial.println(cleanWord);
-        String morseCode = textToMorseCode(cleanWord);
-        playMorseSequence(morseCode, cleanWord);
+        addToQueue(cleanWord);
       } else {
         Serial.println("Ошибка: введите только буквы A-Z и пробелы");
-        Serial.println("Введите слово для кодирования в Морзе:");
       }
     }
+  }
+
+  
+  if (isPlaying && currentMorseCode != "") {
+    playMorseSequence();
+  } else if (queueSize > 0) {
+    
+    startNextMessage();
   }
 }
