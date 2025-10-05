@@ -35,27 +35,12 @@ services:
       context: ./front/LookData/
       dockerfile: Dockerfile.frontend
     container_name: vue-frontend
-    ports:
-      - 80:80
+    expose:
+      - "80"
     depends_on:
       - backend
-    networks:
-      - app-network
-    restart: unless-stopped
-
-  pgadmin:
-    image: dpage/pgadmin4:latest
-    container_name: pgadmin
-    environment:
-      PGADMIN_DEFAULT_EMAIL: admin@admin.com
-      PGADMIN_DEFAULT_PASSWORD: admin
-      PGADMIN_CONFIG_SERVER_MODE: 'False'
     ports:
-      - "5050:80"
-    volumes:
-      - pgadmin-data:/var/lib/pgadmin
-    depends_on:
-      - db
+      - "213:80"
     networks:
       - app-network
     restart: unless-stopped
