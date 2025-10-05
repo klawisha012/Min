@@ -33,7 +33,9 @@ onMounted(() => {
   --accent-color: #ff6b35;
   --light-blue: #87ceeb;
   --electric-blue: #00bfff;
-  --background-color: #0a0a0a;
+
+  --input-bg: rgba(0, 0, 0, 0.27);
+  
   --surface-color: rgba(255, 255, 255, 0.05);
   --glass-surface: rgba(255, 255, 255, 0.1);
   --text-color: #ffffff;
@@ -45,7 +47,7 @@ onMounted(() => {
   --glow: 0 0 20px rgba(0, 212, 255, 0.5);
   --transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   --gradient-primary: linear-gradient(135deg, #00d4ff 0%, #0099cc 50%, #ff6b35 100%);
-  --gradient-bg: radial-gradient(ellipse at center, rgba(0, 212, 255, 0.1) 0%, rgba(0, 0, 0, 0.9) 70%);
+  --gradient-bg: radial-gradient(ellipse at center, rgba(32, 32, 32, 0.66) 0%, rgba(0, 0, 0, 0.9) 90%);
 }
 
 [data-theme="light"] {
@@ -54,7 +56,8 @@ onMounted(() => {
   --accent-color: #ff4500;
   --light-blue: #4a90e2;
   --electric-blue: #007acc;
-  --background-color: #f8fafc;
+  /*--background-color: #f8fafc;*/
+  --input-bg: #f8fafc;
   --surface-color: rgba(255, 255, 255, 0.8);
   --glass-surface: rgba(255, 255, 255, 0.9);
   --text-color: #1a1a1a;

@@ -18,30 +18,6 @@ const isLoading = ref(false)
 const statusMessage = ref('')
 const statusType = ref('')
 
-// Info items data
-const infoItems = ref([
-  {
-    icon: '⚡',
-    title: 'Скорость передачи',
-    description: 'Li-Fi может достигать скорости до 100 Гбит/с, что значительно быстрее Wi-Fi.'
-  },
-  {
-    icon: '🔒',
-    title: 'Безопасность',
-    description: 'Свет не проникает через стены, что делает Li-Fi более безопасным для передачи данных.'
-  },
-  {
-    icon: '🏥',
-    title: 'Применение',
-    description: 'Используется в больницах, самолетах, подводных лодках и других чувствительных к радиоволнам средах.'
-  },
-  {
-    icon: '💡',
-    title: 'Энергоэффективность',
-    description: 'Li-Fi использует существующие светодиодные лампы, что делает его энергоэффективным.'
-  }
-])
-
 // Computed properties
 const themeIcon = computed(() => props.isDarkTheme ? '☀️' : '🌙')
 const themeText = computed(() => props.isDarkTheme ? 'Светлая тема' : 'Темная тема')
@@ -79,7 +55,7 @@ const sendMessage = async () => {
     
     if (response.ok) {
       const result = await response.json()
-      showStatus(`Сообщение успешно отправлено! Отправлено байт: ${result.bytes_count}`, 'success')
+      showStatus(`Сообщение успешно отправлено! Отправлено байт: ${result.sent_bytes.length}`, 'success')
       message.value = '' // Очищаем поле ввода
     } else {
       throw new Error(`Ошибка сервера: ${response.status}`)
@@ -124,17 +100,9 @@ const sendMessage = async () => {
       </button>
     </header>
 
-    <section class="intro intro-glow">
-      <div class="intro-content">
-        <div class="light-bulb">💡</div>
-        <p>Li-Fi (Light Fidelity) — это революционная технология беспроводной связи, использующая видимый свет для передачи данных со скоростью света. Отправьте сообщение ниже, и оно будет преобразовано в световые импульсы и передано на Arduino через COM-порт.</p>
-      </div>
-    </section>
-
     <section class="card glass-card">
       <div class="card-header">
         <h2 class="card-title">
-          <span class="title-icon">📡</span>
           Отправка данных
         </h2>
         <div class="signal-waves">
@@ -146,7 +114,6 @@ const sendMessage = async () => {
       
       <div class="form-group">
         <label for="messageInput" class="form-label">
-          <span class="label-icon">✉️</span>
           Введите текст для отправки через Li-Fi:
         </label>
         <div class="textarea-container">
@@ -166,7 +133,6 @@ const sendMessage = async () => {
         :disabled="isLoading || isMessageEmpty"
       >
         <span class="btn-text">
-          <span class="btn-icon">🚀</span>
           Отправить через Li-Fi
         </span>
         <div class="btn-glow"></div>
@@ -185,21 +151,6 @@ const sendMessage = async () => {
           <span v-else>❌</span>
         </div>
         <span class="status-text">{{ statusMessage }}</span>
-      </div>
-    </section>
-
-    <section class="info-section">
-      <h3 class="info-title">
-        <span class="info-icon">🔬</span>
-        О технологии Li-Fi
-      </h3>
-      <div class="info-grid">
-        <div class="info-item" v-for="(item, index) in infoItems" :key="index">
-          <div class="info-icon">{{ item.icon }}</div>
-          <h4 class="info-item-title">{{ item.title }}</h4>
-          <p class="info-item-text">{{ item.description }}</p>
-          <div class="info-glow"></div>
-        </div>
       </div>
     </section>
   </div>
@@ -222,8 +173,9 @@ const sendMessage = async () => {
 <style scoped>
 .container {
   max-width: 1000px;
+  width: 100%;
   margin: 0 auto;
-  padding: 1rem;
+
   position: relative;
   z-index: 2;
   min-height: 100vh;
@@ -417,6 +369,7 @@ const sendMessage = async () => {
   margin-bottom: 1.25rem;
   position: relative;
   z-index: 2;
+  min-height: 30px;
 }
 
 .card-title {
@@ -490,8 +443,10 @@ const sendMessage = async () => {
   padding: 1rem;
   border: 2px solid var(--border-color);
   border-radius: 12px;
-  background: var(--background-color);
+    
+  background-color: var(--input-bg);
   color: var(--text-color);
+
   resize: vertical;
   min-height: 100px;
   font-size: 0.95rem;
