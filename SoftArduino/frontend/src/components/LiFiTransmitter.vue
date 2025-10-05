@@ -79,7 +79,7 @@ const sendMessage = async () => {
     
     if (response.ok) {
       const result = await response.json()
-      showStatus(`Сообщение успешно отправлено! Отправлено байт: ${result.sent_bytes.length}`, 'success')
+      showStatus(`Сообщение успешно отправлено! Отправлено байт: ${result.bytes_count}`, 'success')
       message.value = '' // Очищаем поле ввода
     } else {
       throw new Error(`Ошибка сервера: ${response.status}`)
